@@ -1496,3 +1496,69 @@ print(stats_phenotype$contrasts, n = Inf)
 
 
 
+Results_LAMP1_GAL3_summary <- read_excel("Data analysis/Datasets/Results_LAMP1_GAL3_summary.xlsx")
+
+# Variables to plot
+cols_to_plot_LAMP1 <- c(
+  "Lysosomal_load",
+  "Perc_damaged_lysosomes"
+)
+
+# Define the order (in the sequence you want them on the x-axis)
+order_levels_LAMP1 <- c(
+  "Isointense_non-foamy",
+  "Isointense_foamy",
+  "Hyperintense_non-foamy",
+  "Hyperintense_foamy"
+)
+
+# Define matching colors (names MUST match your data exactly)
+custom_colors_LAMP1 <- c(
+  "Isointense_non-foamy" = "#74C0FC",  # light blue
+  "Isointense_foamy"    = "#1F78B4",   # dark blue
+  "Hyperintense_non-foamy" = "#FFB3C6", # light pink
+  "Hyperintense_foamy"  = "#E31A1C"    # red
+)
+
+# Ensure the factor levels are set correctly
+Results_LAMP1_GAL3_summary$Iron_microglia <- factor(
+  Results_LAMP1_GAL3_summary$Iron_microglia,
+  levels = order_levels_LAMP1
+)
+
+# Loop over your variables
+for (col in cols_to_plot_LAMP1) {
+  p <- ggplot(Results_LAMP1_GAL3_summary,
+              aes(x = Iron_microglia,
+                  y = .data[[col]],
+                  fill = Iron_microglia)) +
+    geom_boxplot(outlier.shape = NA, width = 0.6, alpha = 0.8, color = "black") +
+    geom_jitter(width = 0.2, alpha = 0.6, size = 1, color = "black") +
+    scale_fill_manual(values = custom_colors_LAMP1) +
+    labs(x = "Iron / Microglia Group",
+         y = col,
+         title = paste("Boxplot of", col)) +
+    theme_minimal(base_size = 10) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+      axis.text.y = element_text(size = 10),
+      legend.position = "none",
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor = element_blank()
+    )
+  
+  print(p)
+}
+
+
+LAMP1_model <- lmer(
+  Lysosomal_load ~ Iron_microglia + (1 | Donor),
+  data = Results_LAMP1_GAL3_summary
+)
+emmeans(LAMP1_model, pairwise ~ Iron_microglia, adjust = "fdr")
+
+GAL3_model <- lmer(
+  Perc_damaged_lysosomes ~ Iron_microglia + (1 | Donor), 
+  data = Results_LAMP1_GAL3_summary)
+emmeans(GAL3_model, pairwise ~ Iron_microglia, adjust = "fdr")
+
